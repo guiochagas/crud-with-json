@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>TASK-APP</h1>
+    <br>
+
+    <form action="{{ url_for('add_task') }}" method="POST">
+        <input type="text" name="task" placeholder="New task" required>
+        <button type="submit">adicionar tarefa</button>
+    </form>
+
+    <ul>
+        {% for task in todo_list %}
+        <li>
+            {{ task }}
+            <button>
+                <a href="{{ url_for('delete_task', task_id=loop.index0) }}">Delete task</a>
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>
