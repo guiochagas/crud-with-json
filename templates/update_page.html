@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Update Page</title>
+    <title>Atualizar Tarefa</title>
+    <script> // CÓDIGO JAVASCRIPT
+        // Coloca o cursor no final do campo após a página ser carregada
+        window.onload = function() {
+            var inputField = document.getElementById("updated_task");
+            inputField.focus();  // Dá foco no campo
+            inputField.setSelectionRange(inputField.value.length, inputField.value.length);  // Move o cursor para o final
+        }
+    </script>
 </head>
 <body>
-
-    <a href="{{ url_for('home') }}">Homepage</a>
-    
-    <h1>Update the task bellow:</h1>
-    <h3>
-        {{ update_task }}
-    </h3>
-
-
-    
+    <h1>Atualizar Tarefa</h1>
+    <form action="{{ url_for('update_page', task_id=task_id) }}" method="POST">
+        <label for="updated_task">Tarefa:</label>
+        <input type="text" id="updated_task" name="updated_task" value="{{ task_to_update }}" autofocus="endfor">
+        <button type="submit">Atualizar</button>
+    </form>
+    <br>
+    <a href="{{ url_for('home') }}">Voltar para a lista de tarefas</a>
 </body>
 </html>
