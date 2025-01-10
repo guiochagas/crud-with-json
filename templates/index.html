@@ -19,7 +19,10 @@
         <li>
             {{ task }}
             <button>
-                <a href="{{ url_for('delete_task', task_id=loop.index0) }}">Delete task</a>
+                <a href="{{ url_for('delete_task', task_id=loop.index0) }}">Delete</a>
+            </button>
+            <button>
+                <a href="{{ url_for('update_page', task_id=loop.index0) }}">Update</a>
             </button>
         </li>
         {% endfor %}
