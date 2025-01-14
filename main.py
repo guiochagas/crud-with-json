@@ -2,66 +2,83 @@ from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 
 app = Flask(__name__)
+app.config["DATABASE"] = "todo.db"
 
-# INICIALIZAR O BANCO DE DADOS
+def get_db_connection():
+    conn = sqlite3.connect(app.config["DATABASE"])
+    conn.row_factory = sqlite3.Row
+    return conn
+
 def init_db():
-    with sqlite3.connect("todo.db") as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
+    with get_db_connection() as conn:
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 description TEXT NOT NULL
             )
         """)
-        conn.commit()
 
-# ROTA PRINCIPAL
+class TaskDAO: # (Data Access Object)
+    @staticmethod
+    def get_all():
+        with get_db_connection() as conn:
+            return conn.execute("SELECT id, description FROM tasks").fetchall()
+
+    @staticmethod
+    def add(description):
+        with get_db_connection() as conn:
+            conn.execute("INSERT INTO tasks (description) VALUES (?)", (description,))
+            conn.commit()
+
+    @staticmethod
+    def delete(task_id):
+        with get_db_connection() as conn:
+            conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+            conn.commit()
+
+    @staticmethod
+    def update(task_id, description):
+        with get_db_connection() as conn:
+            conn.execute("UPDATE tasks SET description = ? WHERE id = ?", (description, task_id))
+            conn.commit()
+
+    @staticmethod
+    def get(task_id):
+        with get_db_connection() as conn:
+            return conn.execute("SELECT description FROM tasks WHERE id = ?", (task_id,)).fetchone()
+
+@app.before_request
+def setup_db():
+    init_db()
+
 @app.route("/")
 def home():
-    with sqlite3.connect("todo.db") as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, description FROM tasks")
-        todo_list = cursor.fetchall()
+    todo_list = TaskDAO.get_all()
     return render_template("index.html", todo_list=todo_list)
 
-# ADICIONAR UMA NOVA TAREFA
 @app.route("/add", methods=["POST"])
 def add_task():
     task = request.form.get("task")
     if task:
-        with sqlite3.connect("todo.db") as conn:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO tasks (description) VALUES (?)", (task,))
-            conn.commit()
+        TaskDAO.add(task)
     return redirect(url_for("home"))
 
-# DELETAR UMA TAREFA
-@app.route("/delete/<int:task_id>", methods=["GET"])
+@app.route("/delete/<int:task_id>")
 def delete_task(task_id):
-    with sqlite3.connect("todo.db") as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-        conn.commit()
+    TaskDAO.delete(task_id)
     return redirect(url_for("home"))
 
-# ATUALIZAR UMA TAREFA
 @app.route("/update/<int:task_id>", methods=["GET", "POST"])
 def update_page(task_id):
-    with sqlite3.connect("todo.db") as conn:
-        cursor = conn.cursor()
-        if request.method == "POST":
-            updated_task = request.form.get("updated_task")
-            if updated_task:
-                cursor.execute("UPDATE tasks SET description = ? WHERE id = ?", (updated_task, task_id))
-                conn.commit()
+    if request.method == "POST":
+        updated_task = request.form.get("updated_task")
+        if updated_task:
+            TaskDAO.update(task_id, updated_task)
             return redirect(url_for("home"))
-        # GET: EXIBE O FORMULÁRIO COM A TAREFA ATUAL
-        cursor.execute("SELECT description FROM tasks WHERE id = ?", (task_id,))
-        task_to_update = cursor.fetchone()
+    task_to_update = TaskDAO.get(task_id)
     if task_to_update:
-        return render_template("update_page.html", task_to_update=task_to_update[0], task_id=task_id)
+        return render_template("update_page.html", task_to_update=task_to_update["description"], task_id=task_id)
     return redirect(url_for("home"))
 
 if __name__ == "__main__":
-    init_db()  # INICIALIZA O DB AO INICIAR O APLICATIVO
     app.run(debug=True)
