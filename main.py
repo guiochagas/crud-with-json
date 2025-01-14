@@ -1,41 +1,67 @@
 from flask import Flask, render_template, request, redirect, url_for
+import sqlite3
 
 app = Flask(__name__)
 
-todo_list = []
+# Função para inicializar o banco de dados
+def init_db():
+    with sqlite3.connect("todo.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL
+            )
+        """)
+        conn.commit()
 
-@app.route("/")  # ROTA PRINCIPAL
+# ROTA PRINCIPAL
+@app.route("/")
 def home():
+    with sqlite3.connect("todo.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, description FROM tasks")
+        todo_list = cursor.fetchall()
     return render_template("index.html", todo_list=todo_list)
 
-
-@app.route("/add", methods=["POST"])  # ADICIONAR UMA NOVA TAREFA
+# ADICIONAR UMA NOVA TAREFA
+@app.route("/add", methods=["POST"])
 def add_task():
     task = request.form.get("task")
     if task:
-        todo_list.append(task)
+        with sqlite3.connect("todo.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO tasks (description) VALUES (?)", (task,))
+            conn.commit()
     return redirect(url_for("home"))
 
-
-@app.route("/delete/<int:task_id>", methods=["GET"])  # DELETAR UMA TAREFA
+# DELETAR UMA TAREFA
+@app.route("/delete/<int:task_id>", methods=["GET"])
 def delete_task(task_id):
-    if 0 <= task_id < len(todo_list):
-        todo_list.pop(task_id)
+    with sqlite3.connect("todo.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        conn.commit()
     return redirect(url_for("home"))
 
-
-@app.route("/update/<int:task_id>", methods=["GET", "POST"])  # ATUALIZAR UMA TAREFA
+# ATUALIZAR UMA TAREFA
+@app.route("/update/<int:task_id>", methods=["GET", "POST"])
 def update_page(task_id):
-    if 0 <= task_id < len(todo_list):
+    with sqlite3.connect("todo.db") as conn:
+        cursor = conn.cursor()
         if request.method == "POST":
             updated_task = request.form.get("updated_task")
             if updated_task:
-                todo_list[task_id] = updated_task
+                cursor.execute("UPDATE tasks SET description = ? WHERE id = ?", (updated_task, task_id))
+                conn.commit()
             return redirect(url_for("home"))
         # GET: Exibe o formulário com a tarefa atual
-        task_to_update = todo_list[task_id]
-        return render_template("update_page.html", task_to_update=task_to_update, task_id=task_id)
+        cursor.execute("SELECT description FROM tasks WHERE id = ?", (task_id,))
+        task_to_update = cursor.fetchone()
+    if task_to_update:
+        return render_template("update_page.html", task_to_update=task_to_update[0], task_id=task_id)
+    return redirect(url_for("home"))
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
+    init_db()  # Inicializa o banco de dados ao iniciar o aplicativo
     app.run(debug=True)

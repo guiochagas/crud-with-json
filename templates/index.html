@@ -3,30 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>To-Do List</title>
 </head>
 <body>
-    <h1>TASK-APP</h1>
-    <br>
-
-    <form action="{{ url_for('add_task') }}" method="POST">
-        <input type="text" name="task" placeholder="New task" autocomplete="off" autofocus required>
-        <button type="submit">Add task</button>
+    <h1>To-Do List</h1>
+    <form action="/add" method="post">
+        <input type="text" name="task" placeholder="New Task" autofocus autocomplete="off">
+        <button type="submit">Add</button>
     </form>
-
     <ul>
         {% for task in todo_list %}
-        <li>
-            {{ task }}
-            <button>
-                <a href="{{ url_for('delete_task', task_id=loop.index0) }}">Delete</a>
-            </button>
-            <button>
-                <a href="{{ url_for('update_page', task_id=loop.index0) }}">Update</a>
-            </button>
-        </li>
+            <li>
+                {{ task[1] }}
+                <a href="/delete/{{ task[0] }}">Delete</a>
+                <a href="/update/{{ task[0] }}">Update</a>
+            </li>
         {% endfor %}
     </ul>
-
 </body>
 </html>
