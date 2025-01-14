@@ -3,7 +3,7 @@ import sqlite3
 
 app = Flask(__name__)
 
-# Função para inicializar o banco de dados
+# INICIALIZAR O BANCO DE DADOS
 def init_db():
     with sqlite3.connect("todo.db") as conn:
         cursor = conn.cursor()
@@ -55,7 +55,7 @@ def update_page(task_id):
                 cursor.execute("UPDATE tasks SET description = ? WHERE id = ?", (updated_task, task_id))
                 conn.commit()
             return redirect(url_for("home"))
-        # GET: Exibe o formulário com a tarefa atual
+        # GET: EXIBE O FORMULÁRIO COM A TAREFA ATUAL
         cursor.execute("SELECT description FROM tasks WHERE id = ?", (task_id,))
         task_to_update = cursor.fetchone()
     if task_to_update:
@@ -63,5 +63,5 @@ def update_page(task_id):
     return redirect(url_for("home"))
 
 if __name__ == "__main__":
-    init_db()  # Inicializa o banco de dados ao iniciar o aplicativo
+    init_db()  # INICIALIZA O DB AO INICIAR O APLICATIVO
     app.run(debug=True)
