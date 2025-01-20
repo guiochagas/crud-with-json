@@ -51,6 +51,14 @@ class TaskDAO: # (Data Access Object)
 def setup_db():
     init_db()
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        directory=app.static_folder,
+        path='favicon.ico',
+        mimetype='image/vnd.microsoft.icon' 
+    )
+
 @app.route("/")
 def home():
     todo_list = TaskDAO.get_all()
